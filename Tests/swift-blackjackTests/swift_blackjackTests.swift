@@ -3,10 +3,21 @@ import XCTest
 
 final class swift_blackjackTests: XCTestCase {
     func testExample() throws {
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
-
-        // Defining Test Cases and Test Methods
-        // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+    }
+    
+    func test_aces() {
+        let hand:Hand = Hand(
+            name: "Test1",
+            type: CardHolderType.player,
+            cards: [
+                Card(number: CardNumber.ace, face: CardFace.up),
+                Card(number: CardNumber.ace, face: CardFace.up),
+                Card(number: CardNumber.ace, face: CardFace.up),
+                Card(number: CardNumber.two, face: CardFace.up),
+                Card(number: CardNumber.eight, face: CardFace.up)
+            ]
+        )
+        let scores:Set<Int> = hand.scores(game: GameType.blackjack)
+        XCTAssertEqual(scores.sorted(by: { $0 < $1 }), [13, 23, 33, 43])
     }
 }
