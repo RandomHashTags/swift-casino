@@ -22,10 +22,13 @@ for _ in 0..<deck_count {
 let player_count:Int = Int(terminal.ask("How many players?"))!
 
 var hands:[Hand] = [
-    Hand(name: "House", type: CardHolderType.house, wager: 0),
+    Hand(player: nil, type: CardHolderType.house, wager: 0),
 ]
+var players:[Player] = []
 for i in 1...player_count {
-    hands.append(Hand(name: "Player\(i)", type: CardHolderType.player, wager: 0))
+    let player:Player = Player(name: "Player\(i)", balance: 200)
+    players.append(player)
+    hands.append(Hand(player: player, type: CardHolderType.player, wager: 0))
 }
 
 let table:Table = Table(

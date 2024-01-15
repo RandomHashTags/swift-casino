@@ -14,7 +14,7 @@ package struct Deck {
 package extension Deck {
     static let normal : Deck = {
         let cards:[Card] = CardNumber.allCases.flatMap({ number in
-            let card:Card = Card(number: number, face: CardFace.up)
+            let card:Card = Card(number: number, face: CardFace.down)
             return (0..<4).map({ _ in card })
         })
         return Deck(cards: cards)

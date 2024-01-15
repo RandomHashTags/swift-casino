@@ -10,11 +10,11 @@ import Foundation
 protocol CardHolder {
     var cards : [Card] { get set }
     
-    func count(_ strategy: CountStrategy) -> Float
+    func count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float
 }
 
 extension CardHolder {
-    func count(_ strategy: CountStrategy) -> Float {
-        return strategy.count(cards)
+    func count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return strategy.count(cards, facing: facing)
     }
 }

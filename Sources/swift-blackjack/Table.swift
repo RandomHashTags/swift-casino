@@ -53,19 +53,44 @@ package final class Table {
         let card:Card = unplayed.removeFirst()
         hand.cards.append(card)
         
-        let scores:Set<Int> = hand.scores(game: game)
-        var string:String = hand.name + " drew: " + card.number.name + " (scores: \(scores))"
-        
-        var result:CardDrawResult
+        var string:String
+        let result:CardDrawResult
         switch game {
         case .blackjack:
-            result = .blackjack(.added)
+            card.face = .up
+            let scores:Set<Int> = hand.scores(game: game)
+            let drew_string:String = hand.name + " drew: " + card.number.name + ". Scores: \(scores)."
+            if hand.is_house {
+                switch hand.cards.count {
+                case 2:
+                    card.face = .down
+                    string = hand.name + " drew: *UNKNOWN*."
+                    break
+                case 3:
+                    blackjack_reveal_house()
+                    fallthrough
+                default:
+                    string = drew_string
+                    break
+                }
+            } else {
+                string = drew_string
+            }
+            
             if scores.contains(21) {
-                string += " (blackjack!)"
+                if hand.cards.count == 2 {
+                    string += " (blackjack!)"
+                    result = .blackjack(.blackjack)
+                } else {
+                    string += " (21!)"
+                    result = .blackjack(.twenty_one)
+                }
             } else if scores.min() ?? 21 > 21 {
                 string += " (busted!)"
                 discard(hand: hand)
                 result = .blackjack(.busted)
+            } else {
+                result = .blackjack(.added)
             }
             break
         }
@@ -85,7 +110,7 @@ package final class Table {
     }
     func ask_to_play_another_round() {
         let acceptable_responses:Set<String> = ["yes", "y", "no", "n"]
-        let question:String = "Play another round? (yes/no [y/n])"
+        let question:String = "\nPlay another round? [y/n]"
         var response:String = get_response(question).lowercased()
         while !acceptable_responses.contains(response) {
             response = get_response(question).lowercased()
@@ -102,50 +127,74 @@ package final class Table {
     }
     
     func discard(hand: Hand) {
-        guard hand.type != .house else { return }
+        for card in hand.cards {
+            card.face = .up
+        }
         discarded.append(contentsOf: hand.cards)
         hand.is_valid = false
+        hand.cards = []
     }
     func discard() {
-        for hand in hands {
-            discarded.append(contentsOf: hand.cards)
-            hand.cards = []
+        for hand in hands.filter({ $0.is_valid }) {
+            discard(hand: hand)
         }
     }
     
-    func running_count(_ strategy: CountStrategy) -> Float {
-        return strategy.count(in_play) + strategy.count(discarded)
+    func running_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return strategy.count(in_play, facing: facing) + strategy.count(discarded, facing: [.down, .up])
     }
-    func true_count(_ strategy: CountStrategy) -> Float {
-        return running_count(strategy) / Float(number_of_decks)
+    func true_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return running_count(strategy, facing: facing) / Float(number_of_decks)
     }
     func count(_ strategy: CountStrategy, type: DeckType) -> Float {
         switch type {
-        case .unplayed: return strategy.count(unplayed)
-        case .in_play: return strategy.count(in_play)
-        case .discarded: return strategy.count(discarded)
+        case .unplayed: return strategy.count(unplayed, facing: [.up])
+        case .in_play: return strategy.count(in_play, facing: [.up])
+        case .discarded: return strategy.count(discarded, facing: [.up])
         }
     }
 }
 
 extension Table {
+    private func blackjack_reveal_house() {
+        let hand:Hand = hands[0]
+        guard hand.cards[1].face == .down else { return }
+        hand.cards[1].face = .up
+        print(hand.name + " revealed: " + hand.cards[1].number.name + ".")
+    }
     func end_round_blackjack() {
-        let house_scores:Set<Int> = hands[0].scores(game: game)
-        let non_house_hands:Set<Hand> = hands.filter_set({ $0.type != .house })
-        if house_scores.min() ?? 21 > 21 { // house busted
-            // everyone that didn't bust, wins
-            for hand in non_house_hands {
-                print("hand " + hand.name + " WON due to house busting")
+        let house:Hand = hands[0]
+        // everyone that didn't bust, and not house
+        let valid_hands:Set<Hand> = hands.filter_set({ $0.type != .house && $0.is_valid })
+        if house.is_valid {
+            // check who won, lost, and pushed
+            let house_scores:Set<Int> = house.scores(game: game)
+            let max_house_score:Int = house_scores.filter({ $0 <= 21 }).max()!
+            
+            var valid_hand_results:[Hand:GameResult.Blackjack] = [:]
+            for hand in valid_hands {
+                let score:Int = hand.scores(game: game).filter({ $0 <= 21 }).max()!
+                valid_hand_results[hand] = score == max_house_score ? .push : score < max_house_score ? .lost : .won
             }
-        } else if let max_house_score:Int = house_scores.filter({ $0 <= 21 }).max() {
-            // everyone that didn't bust, and has a score equal to or greater than house wins
-            let winning_hands:Set<Hand> = non_house_hands.filter({ $0.scores(game: game).count(where: { $0 <= 21 && $0 >= max_house_score }) > 0 })
-            for hand in winning_hands {
-                print("hand " + hand.name + " WON with >= score of \(max_house_score)")
+            
+            let winning_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .won })
+            for (hand, _) in winning_hands {
+                print("hand " + hand.name + " WON with > score of \(max_house_score)")
             }
-            let losing_hands:Set<Hand> = non_house_hands.filter_set({ !winning_hands.contains($0) })
-            for hand in losing_hands {
+            
+            let pushed_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .push })
+            for (hand, _) in pushed_hands {
+                print("hand " + hand.name + " PUSHED with == score of \(max_house_score)")
+            }
+            
+            let losing_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .lost })
+            for (hand, _) in losing_hands {
                 print("hand " + hand.name + " LOST with < score of \(max_house_score)")
+            }
+        } else {
+            // every valid hand won
+            for hand in valid_hands {
+                print("hand " + hand.name + " WON due to house busting")
             }
         }
     }
@@ -178,7 +227,7 @@ package extension Table {
     }
     
     private func perform_next_action(hand_index: Int) {
-        if hands.count == 1 && hands[0].type == .house {
+        if hands.count == 1 && hands[0].is_house {
             ask_to_play_another_round()
             return
         }
@@ -189,6 +238,7 @@ package extension Table {
             switch game {
             case .blackjack:
                 if scores.first(where: { $0 >= 17 && $0 <= 21 }) != nil {
+                    blackjack_reveal_house()
                     end_round()
                 } else {
                     let (card, result):(Card, CardDrawResult) = draw(hand: hand)
@@ -211,7 +261,7 @@ package extension Table {
             return
         }
         
-        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(true_count(.blackjack(.high_low)))]"
+        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(true_count(.blackjack(.high_low), facing: [.up]))]"
         let action:String = get_response(text)
         switch action.prefix(1).lowercased() {
         case "s":

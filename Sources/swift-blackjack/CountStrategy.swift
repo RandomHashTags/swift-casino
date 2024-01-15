@@ -17,16 +17,16 @@ enum CountStrategy : Hashable, CountStrategyProtocol {
     
     case blackjack(CountStrategy.Blackjack)
     
-    func count(_ cards: [Card]) -> Float {
+    func count(_ cards: [Card], facing: Set<CardFace>) -> Float {
         switch self {
         case .blackjack(let blackjack_strategy):
-            return blackjack_strategy.count(cards)
+            return blackjack_strategy.count(cards, facing: facing)
         }
     }
 }
 
 protocol CountStrategyProtocol : CaseIterable {
-    func count(_ cards: [Card]) -> Float
+    func count(_ cards: [Card], facing: Set<CardFace>) -> Float
 }
 
 extension CountStrategy {
@@ -35,7 +35,8 @@ extension CountStrategy {
         case omega_ii
         case wong_halves
         
-        func count(_ cards: [Card]) -> Float {
+        func count(_ cards: [Card], facing: Set<CardFace>) -> Float {
+            let cards:[Card] = cards.filter({ facing.contains($0.face) })
             switch self {
             case .high_low:
                 var value:Float = 0

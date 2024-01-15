@@ -7,8 +7,8 @@ final class swift_blackjackTests: XCTestCase {
     
     func test_aces() {
         let hand:Hand = Hand(
-            name: "Test1",
-            type: CardHolderType.player,
+            player: nil,
+            type: CardHolderType.house,
             cards: [
                 Card(number: CardNumber.ace, face: CardFace.up),
                 Card(number: CardNumber.ace, face: CardFace.up),

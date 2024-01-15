@@ -7,14 +7,23 @@
 
 import Foundation
 
-package struct Card : Hashable {
+package final class Card : Hashable {
+    
+    package static func == (left: Card, right: Card) -> Bool {
+        return left.id == right.id
+    }
+    
     let id:UUID
     let number:CardNumber
-    let face:CardFace
+    var face:CardFace
     
     init(id: UUID = UUID(), number: CardNumber, face: CardFace) {
         self.id = id
         self.number = number
         self.face = face
+    }
+    
+    package func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

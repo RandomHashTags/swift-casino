@@ -15,5 +15,7 @@ extension CardDrawResult {
     enum Blackjack {
         case added
         case busted
+        case blackjack
+        case twenty_one
     }
 }

@@ -16,7 +16,7 @@ package final class Player : Hashable {
     let name:String
     private(set) var balance:Int
     
-    init(id: UUID = UUID(), name: String, balance: Int) {
+    package init(id: UUID = UUID(), name: String, balance: Int) {
         self.id = id
         self.name = name
         self.balance = balance
