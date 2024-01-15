@@ -41,14 +41,7 @@ package final class Table {
     
     func draw_for_everyone() {
         for hand in hands {
-            if unplayed.isEmpty {
-                reset()
-            }
-            
-            let card:Card = unplayed.removeFirst()
-            hand.cards.append(card)
-            
-            print(hand.name + " drew: " + card.number.name + " (scores: \(hand.scores(game: game)))")
+            let (card, result):(Card, CardDrawResult) = draw(hand: hand)
         }
     }
     
@@ -88,12 +81,14 @@ package final class Table {
         }
         
         discard()
-        
-        let acceptable_responses:Set<String> = ["y", "yes", "no", "n"]
+        ask_to_play_another_round()
+    }
+    func ask_to_play_another_round() {
+        let acceptable_responses:Set<String> = ["yes", "y", "no", "n"]
         let question:String = "Play another round? (yes/no [y/n])"
-        var response:String = terminal.ask(ConsoleText(stringLiteral: question)).lowercased()
+        var response:String = get_response(question).lowercased()
         while !acceptable_responses.contains(response) {
-            response = terminal.ask(ConsoleText(stringLiteral: question)).lowercased()
+            response = get_response(question).lowercased()
         }
         switch response {
         case "yes", "y":
@@ -109,8 +104,7 @@ package final class Table {
     func discard(hand: Hand) {
         guard hand.type != .house else { return }
         discarded.append(contentsOf: hand.cards)
-        guard let index:Int = hands.firstIndex(where: { $0 == hand }) else { return }
-        hands.remove(at: index)
+        hand.is_valid = false
     }
     func discard() {
         for hand in hands {
@@ -159,6 +153,9 @@ extension Table {
 
 package extension Table {
     func play_round() {
+        for hand in hands {
+            hand.is_valid = true
+        }
         guard let player_index:Int = hands.firstIndex(where: { $0.type != .house }) else {
             print("need at least one player to play")
             return
@@ -177,17 +174,21 @@ package extension Table {
             }
             break
         }
-        
         perform_next_action(hand_index: player_index)
     }
     
     private func perform_next_action(hand_index: Int) {
-        guard let hand:Hand = hands.get(hand_index) else { return }
+        if hands.count == 1 && hands[0].type == .house {
+            ask_to_play_another_round()
+            return
+        }
+        
+        let hand:Hand = hands[hand_index]
         guard hand.type != .house else {
             let scores:Set<Int> = hand.scores(game: game)
             switch game {
             case .blackjack:
-                if scores.first(where: { $0 >= 17 }) != nil {
+                if scores.first(where: { $0 >= 17 && $0 <= 21 }) != nil {
                     end_round()
                 } else {
                     let (card, result):(Card, CardDrawResult) = draw(hand: hand)
@@ -204,10 +205,14 @@ package extension Table {
             }
             return
         }
-        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(true_count(.blackjack(.high_low)))]"
-        let action:String = terminal.ask(ConsoleText(stringLiteral: text))
-        
         var next_index:Int = (hand_index + 1) % hands.count
+        guard hand.is_valid else {
+            perform_next_action(hand_index: next_index)
+            return
+        }
+        
+        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(true_count(.blackjack(.high_low)))]"
+        let action:String = get_response(text)
         switch action.prefix(1).lowercased() {
         case "s":
             break
@@ -215,7 +220,6 @@ package extension Table {
             let (card, result):(Card, CardDrawResult) = draw(hand: hand)
             switch result {
             case .blackjack(.busted):
-                next_index = hand_index
                 break
             default:
                 next_index = hand_index
@@ -227,5 +231,11 @@ package extension Table {
             return
         }
         perform_next_action(hand_index: next_index)
+    }
+}
+
+extension Table {
+    func get_response(_ string: String) -> String {
+        return terminal.ask(ConsoleText(stringLiteral: string))
     }
 }

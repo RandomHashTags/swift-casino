@@ -17,12 +17,16 @@ package final class Hand : CardHolder, Hashable {
     let name:String
     let type:CardHolderType
     var cards:[Card]
+    var is_valid:Bool
+    var wager:Int
     
-    package init(id: UUID = UUID(), name: String, type: CardHolderType, cards: [Card]) {
+    package init(id: UUID = UUID(), name: String, type: CardHolderType, cards: [Card] = [], is_valid: Bool = true, wager: Int) {
         self.id = id
         self.name = name
         self.type = type
         self.cards = cards
+        self.is_valid = is_valid
+        self.wager = wager
     }
     
     package func hash(into hasher: inout Hasher) {

@@ -15,7 +15,8 @@ final class swift_blackjackTests: XCTestCase {
                 Card(number: CardNumber.ace, face: CardFace.up),
                 Card(number: CardNumber.two, face: CardFace.up),
                 Card(number: CardNumber.eight, face: CardFace.up)
-            ]
+            ],
+            wager: 0
         )
         let scores:Set<Int> = hand.scores(game: GameType.blackjack)
         XCTAssertEqual(scores.sorted(by: { $0 < $1 }), [13, 23, 33, 43])
