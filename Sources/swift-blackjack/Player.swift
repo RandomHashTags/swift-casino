@@ -19,7 +19,8 @@ package final class Player : Hashable {
     private(set) var balance:Int
     private(set) var data_blackjack:BlackjackData
     
-    var communication_type:PlayerCommunicationType
+    private(set) var terminal:Terminal!
+    private(set) var communication_type:PlayerCommunicationType
     
     package init(
         id: UUID = UUID(),
@@ -35,6 +36,7 @@ package final class Player : Hashable {
         self.balance = balance
         self.data_blackjack = data_blackjack
         self.communication_type = communication_type
+        set_communication_type(communication_type)
     }
     
     package func hash(into hasher: inout Hasher) {
@@ -89,13 +91,34 @@ extension Player {
     }
 }
 
+private extension Player {
+    func terminal_ask(_ string: String) async -> String {
+        return await withCheckedContinuation { continuation in
+            let response:String = terminal.ask(ConsoleText(stringLiteral: string))
+            continuation.resume(returning: response)
+        }
+    }
+}
+
 extension Player {
-    func prompt(test: String, response: @escaping (String) -> Void) {
-        switch communication_type {
+    func set_communication_type(_ type: PlayerCommunicationType) {
+        communication_type = type
+        switch type {
         case .command_line_interface:
+            terminal = Terminal()
             break
         case .user_interface:
+            terminal = nil
             break
+        }
+    }
+    
+    func ask(_ string: String) async -> String {
+        switch communication_type {
+        case .command_line_interface:
+            return await terminal_ask(string)
+        case .user_interface:
+            return "???"
         }
     }
 }

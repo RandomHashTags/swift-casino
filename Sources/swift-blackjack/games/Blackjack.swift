@@ -93,6 +93,15 @@ extension Blackjack {
     func next_hand() {
         let (index, hand):(Int, BlackjackHand) = get_next_hand()
         active_hand_index = index
+        
+        guard let player:Player = hand.player else { return }
+        Task {
+            await process_player_action(player: player)
+        }
+    }
+    func process_player_action(player: Player) async -> BlackjackCardDrawResult? {
+        let action:String = await player.ask("NEXT ACTION??")
+        return perform_action(player: player, action: BlackjackAction.stay, wager: 0)
     }
     
     func perform_action(player: Player, action: BlackjackAction, wager: Int) -> BlackjackCardDrawResult? {
@@ -125,6 +134,7 @@ extension Blackjack {
             surrender(hand)
             break
         case .split:
+            split(hand)
             break
         case .double_down:
             double_down(player: player, wager: wager, hand: hand)
@@ -159,6 +169,19 @@ extension Blackjack {
         }
         discard(hand)
         next_hand()
+    }
+    func split(_ hand: BlackjackHand) {
+        guard hand.can_split, let player:Player = hand.player, let wager:Int = hand.wagers[player] else { return }
+        
+        let card:Card = hand.cards.removeLast()
+        let hand:BlackjackHand = BlackjackHand(player: player, type: hand.type, cards: [card], wagers: hand.wagers)
+        
+        player.bet_placed(game: .blackjack, wager)
+        hands.insert(hand, at: active_hand_index)
+        
+        print(hand.name + " split")
+        let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hand)
+        let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hands[active_hand_index+1])
     }
     func double_down(player: Player, wager: Int, hand: BlackjackHand) {
         guard hand.allows_more_cards else { return }

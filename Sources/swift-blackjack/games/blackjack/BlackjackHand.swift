@@ -47,7 +47,7 @@ package final class BlackjackHand : CardHolder, Hashable {
     }
     
     var name : String {
-        return is_house ? "House" : player!.name
+        return is_house ? "House" : player!.name + " (hand \(id)"
     }
     var is_house : Bool {
         return type == .house
