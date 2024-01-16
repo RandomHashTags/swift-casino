@@ -8,7 +8,6 @@
 import Foundation
 
 package final class Card : Hashable {
-    
     package static func == (left: Card, right: Card) -> Bool {
         return left.id == right.id
     }

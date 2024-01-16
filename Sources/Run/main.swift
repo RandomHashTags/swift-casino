@@ -22,20 +22,31 @@ for _ in 0..<deck_count {
 let player_count:Int = Int(terminal.ask("How many players?"))!
 
 var hands:[Hand] = [
-    Hand(player: nil, type: CardHolderType.house, wager: 0),
+    Hand(player: nil, type: CardHolderType.house, wagers: [:]),
 ]
 var players:[Player] = []
+var wagers:[Player:[Int]] = [:]
 for i in 1...player_count {
-    let player:Player = Player(name: "Player\(i)", balance: 200)
+    let player:Player = Player(
+        name: "Player\(i)",
+        balance: 200,
+        data_blackjack: BlackjackData(
+            wagered: 0,
+            pushed: 0,
+            surrendered: 0,
+            insured: 0,
+            winnings: 0,
+            bets_placed: 0,
+            bets_won: 0,
+            bets_pushed: 0,
+            bets_insured: 0,
+            bets_surrendered: 0
+        ),
+        communication_type: PlayerCommunicationType.command_line_interface
+    )
     players.append(player)
-    hands.append(Hand(player: player, type: CardHolderType.player, wager: 0))
+    wagers[player] = [1]
 }
 
-let table:Table = Table(
-    terminal: terminal,
-    game: game,
-    decks: decks,
-    hands: hands
-)
-
-table.play_round()
+let blackjack:Blackjack = Blackjack(decks: decks, players: players)
+blackjack.round_start(wagers: wagers)

@@ -16,15 +16,18 @@ package final class Table {
     private(set) var unplayed:[Card]
     private(set) var discarded:[Card]
     
+    /// [player : number of hands]
+    private(set) var players:[Player:Int]
     private(set) var hands:[Hand]
     
-    package init(terminal: Terminal, game: GameType, decks: [Deck], hands: [Hand]) {
+    package init(terminal: Terminal, game: GameType, decks: [Deck], players: [Player:Int]) {
         self.terminal = terminal
         self.game = game
         self.unplayed = decks.flatMap({ $0.cards })
         number_of_decks = decks.count
+        self.players = players
         self.discarded = []
-        self.hands = hands
+        self.hands = []
     }
     
     var in_play : [Card] {
@@ -131,8 +134,6 @@ package final class Table {
             card.face = .up
         }
         discarded.append(contentsOf: hand.cards)
-        hand.is_valid = false
-        hand.cards = []
     }
     func discard() {
         for hand in hands.filter({ $0.is_valid }) {
@@ -202,8 +203,12 @@ extension Table {
 
 package extension Table {
     func play_round() {
-        for hand in hands {
-            hand.is_valid = true
+        hands.removeAll()
+        for (player, number_of_hands) in players {
+            for _ in 0..<number_of_hands {
+                let hand:Hand = Hand(player: player, type: CardHolderType.player, wagers: [player : 0])
+                hands.append(hand)
+            }
         }
         guard let player_index:Int = hands.firstIndex(where: { $0.type != .house }) else {
             print("need at least one player to play")

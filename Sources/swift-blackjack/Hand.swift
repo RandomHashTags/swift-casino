@@ -18,15 +18,15 @@ package final class Hand : CardHolder, Hashable {
     let type:CardHolderType
     var cards:[Card]
     var is_valid:Bool
-    var wager:Int
+    var wagers:[Player:Int]
     
-    package init(id: UUID = UUID(), player: Player?, type: CardHolderType, cards: [Card] = [], is_valid: Bool = true, wager: Int) {
+    package init(id: UUID = UUID(), player: Player?, type: CardHolderType, cards: [Card] = [], is_valid: Bool = true, wagers: [Player:Int]) {
         self.id = id
         self.player = player
         self.type = type
         self.cards = cards
         self.is_valid = is_valid
-        self.wager = wager
+        self.wagers = wagers
     }
     
     package func hash(into hasher: inout Hasher) {
