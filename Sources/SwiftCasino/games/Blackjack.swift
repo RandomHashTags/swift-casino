@@ -283,8 +283,9 @@ extension Blackjack {
 
 extension Blackjack {
     func round_end() {
-        let hands:[BlackjackHand] = hands.filter({ $0.is_valid })
+        let hands:[BlackjackHand] = hands.filter({ $0.type != .house && $0.is_valid })
         
+        let house:BlackjackHand = house
         if house.is_valid {
             // check who won, lost, and pushed
             let max_house_score:Int = house.scores().filter({ $0 <= 21 }).max()!
