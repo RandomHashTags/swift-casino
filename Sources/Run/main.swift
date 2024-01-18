@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import swift_blackjack
+import SwiftCasino
 import ConsoleKitTerminal
 
 let terminal:Terminal = Terminal()

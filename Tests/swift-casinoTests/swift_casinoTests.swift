@@ -1,7 +1,7 @@
 import XCTest
-@testable import swift_blackjack
+@testable import SwiftCasino
 
-final class swift_blackjackTests: XCTestCase {
+final class swift_casinoTests: XCTestCase {
     func testExample() throws {
     }
     

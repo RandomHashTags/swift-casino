@@ -4,14 +4,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-blackjack",
+    name: "swift-casino",
     platforms: [
         .macOS(.v10_15)
     ],
     products: [
         .library(
-            name: "swift-blackjack",
-            targets: ["swift-blackjack"]
+            name: "SwiftCasino",
+            targets: ["SwiftCasino"]
         ),
     ],
     dependencies: [
@@ -19,18 +19,18 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "swift-blackjack",
+            name: "SwiftCasino",
             dependencies: [
                 .product(name: "ConsoleKit", package: "console-kit")
             ]
         ),
         .executableTarget(
             name: "Run",
-            dependencies: ["swift-blackjack"]
+            dependencies: ["SwiftCasino"]
         ),
         .testTarget(
-            name: "swift-blackjackTests",
-            dependencies: ["swift-blackjack"]
+            name: "swift-casinoTests",
+            dependencies: ["SwiftCasino"]
         ),
     ]
 )
