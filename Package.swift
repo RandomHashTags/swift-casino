@@ -15,12 +15,14 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/console-kit", from: "4.14.1")
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.91.1"),
+        .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.1")
     ],
     targets: [
         .target(
             name: "SwiftCasino",
             dependencies: [
+                .product(name: "Vapor", package: "vapor"),
                 .product(name: "ConsoleKit", package: "console-kit")
             ]
         ),
