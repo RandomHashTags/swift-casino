@@ -5,7 +5,11 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#elseif canImport(Foundation)
 import Foundation
+#endif
 
 package final class Card : Hashable {
     package static func == (left: Card, right: Card) -> Bool {

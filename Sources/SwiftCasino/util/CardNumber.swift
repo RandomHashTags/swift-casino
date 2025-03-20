@@ -5,8 +5,6 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
-
 enum CardNumber : Int, CaseIterable {
     case ace = 1
     case two

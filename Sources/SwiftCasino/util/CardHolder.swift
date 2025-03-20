@@ -5,8 +5,6 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
-
 protocol CardHolder {
     var cards : [Card] { get set }
     

@@ -5,8 +5,6 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
-
 package struct Deck {
     let cards:[Card]
 }

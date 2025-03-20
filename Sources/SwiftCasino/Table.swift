@@ -5,14 +5,13 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
 import ConsoleKit
 
 package final class Table {
     
     let terminal:Terminal
     private(set) var game:GameType
-    private(set) var number_of_decks:Int
+    private(set) var numberOfDecks:Int
     private(set) var unplayed:[Card]
     private(set) var discarded:[Card]
     
@@ -24,13 +23,13 @@ package final class Table {
         self.terminal = terminal
         self.game = game
         self.unplayed = decks.flatMap({ $0.cards })
-        number_of_decks = decks.count
+        numberOfDecks = decks.count
         self.players = players
         self.discarded = []
         self.hands = []
     }
     
-    var in_play : [Card] {
+    var inPlay : [Card] {
         return hands.flatMap({ $0.cards })
     }
     
@@ -42,7 +41,7 @@ package final class Table {
         discarded = []
     }
     
-    func draw_for_everyone() {
+    func drawForEveryone() {
         for hand in hands {
             let (card, result):(Card, CardDrawResult) = draw(hand: hand)
         }
@@ -62,22 +61,21 @@ package final class Table {
         case .blackjack:
             card.face = .up
             let scores:Set<Int> = hand.scores(game: game)
-            let drew_string:String = hand.name + " drew: " + card.number.name + ". Scores: \(scores)."
-            if hand.is_house {
+            let drewString:String = hand.name + " drew: " + card.number.name + ". Scores: \(scores)."
+            if hand.isHouse {
                 switch hand.cards.count {
                 case 2:
                     card.face = .down
                     string = hand.name + " drew: *UNKNOWN*."
-                    break
                 case 3:
-                    blackjack_reveal_house()
+                    blackjackRevealHouse()
                     fallthrough
                 default:
-                    string = drew_string
+                    string = drewString
                     break
                 }
             } else {
-                string = drew_string
+                string = drewString
             }
             
             if scores.contains(21) {
@@ -86,7 +84,7 @@ package final class Table {
                     result = .blackjack(.blackjack)
                 } else {
                     string += " (21!)"
-                    result = .blackjack(.twenty_one)
+                    result = .blackjack(.twentyOne)
                 }
             } else if scores.min() ?? 21 > 21 {
                 string += " (busted!)"
@@ -95,33 +93,30 @@ package final class Table {
             } else {
                 result = .blackjack(.added)
             }
-            break
         }
         print(string)
         return (card, result)
     }
     
-    func end_round() {
+    func endRound() {
         switch game {
         case .blackjack:
-            end_round_blackjack()
-            break
+            endRoundBlackjack()
         }
         
         discard()
-        ask_to_play_another_round()
+        askToPlayAnotherRound()
     }
-    func ask_to_play_another_round() {
-        let acceptable_responses:Set<String> = ["yes", "y", "no", "n"]
+    func askToPlayAnotherRound() {
+        let acceptableResponses:Set<String> = ["yes", "y", "no", "n"]
         let question:String = "\nPlay another round? [y/n]"
-        var response:String = get_response(question).lowercased()
-        while !acceptable_responses.contains(response) {
-            response = get_response(question).lowercased()
+        var response:String = getResponse(question).lowercased()
+        while !acceptableResponses.contains(response) {
+            response = getResponse(question).lowercased()
         }
         switch response {
         case "yes", "y":
-            play_round()
-            break
+            playRound()
         case "no", "n":
             break
         default:
@@ -136,65 +131,65 @@ package final class Table {
         discarded.append(contentsOf: hand.cards)
     }
     func discard() {
-        for hand in hands.filter({ $0.is_valid }) {
+        for hand in hands.filter({ $0.isValid }) {
             discard(hand: hand)
         }
     }
     
-    func running_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
-        return strategy.count(in_play, facing: facing) + strategy.count(discarded, facing: [.down, .up])
+    func runningCount(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return strategy.count(inPlay, facing: facing) + strategy.count(discarded, facing: [.down, .up])
     }
-    func true_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
-        return running_count(strategy, facing: facing) / Float(number_of_decks)
+    func trueCount(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return runningCount(strategy, facing: facing) / Float(numberOfDecks)
     }
     func count(_ strategy: CountStrategy, type: DeckType) -> Float {
         switch type {
-        case .unplayed: return strategy.count(unplayed, facing: [.up])
-        case .in_play: return strategy.count(in_play, facing: [.up])
+        case .unplayed:  return strategy.count(unplayed, facing: [.up])
+        case .inPlay:    return strategy.count(inPlay, facing: [.up])
         case .discarded: return strategy.count(discarded, facing: [.up])
         }
     }
 }
 
 extension Table {
-    private func blackjack_reveal_house() {
+    private func blackjackRevealHouse() {
         let hand:Hand = hands[0]
         guard hand.cards[1].face == .down else { return }
         hand.cards[1].face = .up
         print(hand.name + " revealed: " + hand.cards[1].number.name + ".")
     }
-    func end_round_blackjack() {
+    func endRoundBlackjack() {
         let house:Hand = hands[0]
         // everyone that didn't bust, and not house
-        let valid_hands:Set<Hand> = hands.filter_set({ $0.type != .house && $0.is_valid })
-        if house.is_valid {
+        let validHands:Set<Hand> = hands.filterSet({ $0.type != .house && $0.isValid })
+        if house.isValid {
             // check who won, lost, and pushed
-            let house_scores:Set<Int> = house.scores(game: game)
-            let max_house_score:Int = house_scores.filter({ $0 <= 21 }).max()!
+            let houseScores:Set<Int> = house.scores(game: game)
+            let maxHouseScore:Int = houseScores.filter({ $0 <= 21 }).max()!
             
-            var valid_hand_results:[Hand:GameResult.Blackjack] = [:]
-            for hand in valid_hands {
+            var validHandResults:[Hand:GameResult.Blackjack] = [:]
+            for hand in validHands {
                 let score:Int = hand.scores(game: game).filter({ $0 <= 21 }).max()!
-                valid_hand_results[hand] = score == max_house_score ? .push : score < max_house_score ? .lost : .won
+                validHandResults[hand] = score == maxHouseScore ? .push : score < maxHouseScore ? .lost : .won
             }
             
-            let winning_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .won })
-            for (hand, _) in winning_hands {
-                print("hand " + hand.name + " WON with > score of \(max_house_score)")
+            let winningHands:[Hand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .won })
+            for (hand, _) in winningHands {
+                print("hand " + hand.name + " WON with > score of \(maxHouseScore)")
             }
             
-            let pushed_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .push })
-            for (hand, _) in pushed_hands {
-                print("hand " + hand.name + " PUSHED with == score of \(max_house_score)")
+            let pushedHands:[Hand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .push })
+            for (hand, _) in pushedHands {
+                print("hand " + hand.name + " PUSHED with == score of \(maxHouseScore)")
             }
             
-            let losing_hands:[Hand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .lost })
-            for (hand, _) in losing_hands {
-                print("hand " + hand.name + " LOST with < score of \(max_house_score)")
+            let losingHands:[Hand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .lost })
+            for (hand, _) in losingHands {
+                print("hand " + hand.name + " LOST with < score of \(maxHouseScore)")
             }
         } else {
             // every valid hand won
-            for hand in valid_hands {
+            for hand in validHands {
                 print("hand " + hand.name + " WON due to house busting")
             }
         }
@@ -202,7 +197,7 @@ extension Table {
 }
 
 package extension Table {
-    func play_round() {
+    func playRound() {
         hands.removeAll()
         for (player, number_of_hands) in players {
             for _ in 0..<number_of_hands {
@@ -210,7 +205,7 @@ package extension Table {
                 hands.append(hand)
             }
         }
-        guard let player_index:Int = hands.firstIndex(where: { $0.type != .house }) else {
+        guard let playerIndex:Int = hands.firstIndex(where: { $0.type != .house }) else {
             print("need at least one player to play")
             return
         }
@@ -218,56 +213,52 @@ package extension Table {
         
         switch game {
         case .blackjack:
-            draw_for_everyone()
-            draw_for_everyone()
+            drawForEveryone()
+            drawForEveryone()
             
             if hands[0].scores(game: game).contains(21) {
                 print("House drew blackjack!")
-                end_round()
+                endRound()
                 return
             }
-            break
         }
-        perform_next_action(hand_index: player_index)
+        performNextAction(handIndex: playerIndex)
     }
     
-    private func perform_next_action(hand_index: Int) {
-        if hands.count == 1 && hands[0].is_house {
-            ask_to_play_another_round()
+    private func performNextAction(handIndex: Int) {
+        if hands.count == 1 && hands[0].isHouse {
+            askToPlayAnotherRound()
             return
         }
         
-        let hand:Hand = hands[hand_index]
+        let hand:Hand = hands[handIndex]
         guard hand.type != .house else {
             let scores:Set<Int> = hand.scores(game: game)
             switch game {
             case .blackjack:
                 if scores.first(where: { $0 >= 17 && $0 <= 21 }) != nil {
-                    blackjack_reveal_house()
-                    end_round()
+                    blackjackRevealHouse()
+                    endRound()
                 } else {
                     let (card, result):(Card, CardDrawResult) = draw(hand: hand)
                     switch result {
                     case .blackjack(.busted):
-                        end_round()
-                        return
+                        endRound()
                     default:
-                        perform_next_action(hand_index: hand_index)
-                        break
+                        performNextAction(handIndex: handIndex)
                     }
                 }
-                break
             }
             return
         }
-        var next_index:Int = (hand_index + 1) % hands.count
-        guard hand.is_valid else {
-            perform_next_action(hand_index: next_index)
+        var nextIndex:Int = (handIndex + 1) % hands.count
+        guard hand.isValid else {
+            performNextAction(handIndex: nextIndex)
             return
         }
         
-        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(true_count(.blackjack(.high_low), facing: [.up]))]"
-        let action:String = get_response(text)
+        let text:String = hand.name + ": Stay or Hit? (s/h) [true count=\(trueCount(.blackjack(.highLow), facing: [.up]))]"
+        let action:String = getResponse(text)
         switch action.prefix(1).lowercased() {
         case "s":
             break
@@ -277,20 +268,17 @@ package extension Table {
             case .blackjack(.busted):
                 break
             default:
-                next_index = hand_index
-                break
+                nextIndex = handIndex
             }
-            break
         default:
-            perform_next_action(hand_index: hand_index)
-            return
+            performNextAction(handIndex: handIndex)
         }
-        perform_next_action(hand_index: next_index)
+        performNextAction(handIndex: nextIndex)
     }
 }
 
 extension Table {
-    func get_response(_ string: String) -> String {
+    func getResponse(_ string: String) -> String {
         return terminal.ask(ConsoleText(stringLiteral: string))
     }
 }

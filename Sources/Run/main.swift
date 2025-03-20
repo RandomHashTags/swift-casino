@@ -5,7 +5,6 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
 import SwiftCasino
 import ConsoleKitTerminal
 
@@ -13,40 +12,40 @@ let terminal:Terminal = Terminal()
 
 let game:GameType = GameType.blackjack
 
-let deck_count:Int = Int(terminal.ask("How many decks?"))!
+let deckCount:Int = Int(terminal.ask("How many decks?"))!
 var decks:[Deck] = [Deck]()
-for _ in 0..<deck_count {
+for _ in 0..<deckCount {
     decks.append(Deck.normal)
 }
 
-let player_count:Int = Int(terminal.ask("How many players?"))!
+let playerCount:Int = Int(terminal.ask("How many players?"))!
 
 var hands:[Hand] = [
     Hand(player: nil, type: CardHolderType.house, wagers: [:]),
 ]
 var players:[Player] = []
 var wagers:[Player:[Int]] = [:]
-for i in 1...player_count {
+for i in 1...playerCount {
     let player:Player = Player(
         name: "Player\(i)",
         balance: 200,
-        data_blackjack: BlackjackData(
+        dataBlackjack: BlackjackData(
             wagered: 0,
             pushed: 0,
             surrendered: 0,
             insured: 0,
             winnings: 0,
-            bets_placed: 0,
-            bets_won: 0,
-            bets_pushed: 0,
-            bets_insured: 0,
-            bets_surrendered: 0
+            betsPlaced: 0,
+            betsWon: 0,
+            betsPushed: 0,
+            betsInsured: 0,
+            betsSurrendered: 0
         ),
-        communication_type: PlayerCommunicationType.command_line_interface
+        communicationType: PlayerCommunicationType.commandLineInterface
     )
     players.append(player)
     wagers[player] = [1]
 }
 
 let blackjack:Blackjack = Blackjack(decks: decks, players: players)
-blackjack.round_start(wagers: wagers)
+blackjack.roundStart(wagers: wagers)

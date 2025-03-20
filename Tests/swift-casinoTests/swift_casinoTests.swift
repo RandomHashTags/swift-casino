@@ -1,11 +1,10 @@
-import XCTest
+
+import Testing
 @testable import SwiftCasino
 
-final class swift_casinoTests: XCTestCase {
-    func testExample() throws {
-    }
-    
-    func test_aces() {
+struct swift_casinoTests {
+    @Test
+    func testAces() {
         let hand:Hand = Hand(
             player: nil,
             type: CardHolderType.house,
@@ -19,6 +18,6 @@ final class swift_casinoTests: XCTestCase {
             wagers: [:]
         )
         let scores:Set<Int> = hand.scores(game: GameType.blackjack)
-        XCTAssertEqual(scores.sorted(by: { $0 < $1 }), [13, 23, 33, 43])
+        #expect(scores.sorted(by: { $0 < $1 }) == [13, 23, 33, 43])
     }
 }

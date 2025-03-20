@@ -5,11 +5,9 @@
 //  Created by Evan Anderson on 1/15/24.
 //
 
-import Foundation
-
 package final class BlackjackData : Codable {
     private(set) var wagered:Int, pushed:Int, surrendered:Int, insured: Int, winnings:Int
-    private(set) var bets_placed:Int, bets_won:Int, bets_pushed:Int, bets_insured: Int, bets_surrendered:Int
+    private(set) var betsPlaced:Int, betsWon:Int, betsPushed:Int, betsInsured: Int, betsSurrendered:Int
     
     package init(
         wagered: Int,
@@ -18,54 +16,54 @@ package final class BlackjackData : Codable {
         insured: Int,
         winnings: Int,
         
-        bets_placed: Int,
-        bets_won: Int,
-        bets_pushed: Int,
-        bets_insured: Int,
-        bets_surrendered: Int
+        betsPlaced: Int,
+        betsWon: Int,
+        betsPushed: Int,
+        betsInsured: Int,
+        betsSurrendered: Int
     ) {
         self.wagered = wagered
         self.pushed = pushed
         self.surrendered = surrendered
         self.insured = insured
         self.winnings = winnings
-        self.bets_placed = bets_placed
-        self.bets_won = bets_won
-        self.bets_pushed = bets_pushed
-        self.bets_insured = bets_insured
-        self.bets_surrendered = bets_surrendered
+        self.betsPlaced = betsPlaced
+        self.betsWon = betsWon
+        self.betsPushed = betsPushed
+        self.betsInsured = betsInsured
+        self.betsSurrendered = betsSurrendered
     }
     
     var lost : Int {
         return wagered - surrendered - winnings
     }
     
-    var bets_lost : Int {
-        return bets_placed - bets_won - bets_surrendered
+    var betsLost : Int {
+        return betsPlaced - betsWon - betsSurrendered
     }
     
-    func bet_placed(_ wager: Int) {
+    func betPlaced(_ wager: Int) {
         wagered += wager
-        bets_placed += 1
+        betsPlaced += 1
     }
     
-    func bet_won(_ wager: Int) {
+    func betWon(_ wager: Int) {
         winnings += wager
-        bets_won += 1
+        betsWon += 1
     }
     
-    func bet_pushed(_ wager: Int) {
+    func betPushed(_ wager: Int) {
         pushed += wager
-        bets_pushed += 1
+        betsPushed += 1
     }
     
-    func bet_insured(_ wager: Int) {
+    func betInsured(_ wager: Int) {
         insured += wager
-        bets_insured += 1
+        betsInsured += 1
     }
     
-    func bet_surrendered(recovered wager: Int) {
+    func betSurrendered(recovered wager: Int) {
         surrendered += wager
-        bets_surrendered += 1
+        betsSurrendered += 1
     }
 }

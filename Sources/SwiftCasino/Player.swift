@@ -5,7 +5,12 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#elseif canImport(Foundation)
 import Foundation
+#endif
+
 import ConsoleKit
 
 package final class Player : Hashable {
@@ -17,26 +22,26 @@ package final class Player : Hashable {
     let name:String
     
     private(set) var balance:Int
-    private(set) var data_blackjack:BlackjackData
+    private(set) var dataBlackjack:BlackjackData
     
     private(set) var terminal:Terminal!
-    private(set) var communication_type:PlayerCommunicationType
+    private(set) var communicationType:PlayerCommunicationType
     
     package init(
         id: UUID = UUID(),
         name: String,
         
         balance: Int,
-        data_blackjack: BlackjackData,
+        dataBlackjack: BlackjackData,
         
-        communication_type: PlayerCommunicationType
+        communicationType: PlayerCommunicationType
     ) {
         self.id = id
         self.name = name
         self.balance = balance
-        self.data_blackjack = data_blackjack
-        self.communication_type = communication_type
-        set_communication_type(communication_type)
+        self.dataBlackjack = dataBlackjack
+        self.communicationType = communicationType
+        setCommunicationType(communicationType)
     }
     
     package func hash(into hasher: inout Hasher) {
@@ -45,54 +50,49 @@ package final class Player : Hashable {
 }
 
 extension Player {
-    func bet_placed(game: GameType, _ wager: Int) {
+    func betPlaced(game: GameType, _ wager: Int) {
         balance -= wager
         switch game {
         case .blackjack:
-            data_blackjack.bet_placed(wager)
-            break
+            dataBlackjack.betPlaced(wager)
         }
     }
     
-    func bet_won(game: GameType, _ wager: Int) {
+    func betWon(game: GameType, _ wager: Int) {
         balance += wager
         switch game {
         case .blackjack:
-            data_blackjack.bet_won(wager)
-            break
+            dataBlackjack.betWon(wager)
         }
     }
     
-    func bet_pushed(game: GameType, _ wager: Int) {
+    func betPushed(game: GameType, _ wager: Int) {
         balance += wager
         switch game {
         case .blackjack:
-            data_blackjack.bet_pushed(wager)
-            break
+            dataBlackjack.betPushed(wager)
         }
     }
     
-    func bet_insured(game: GameType, _ wager: Int) {
+    func betInsured(game: GameType, _ wager: Int) {
         balance -= wager
         switch game {
         case .blackjack:
-            data_blackjack.bet_insured(wager)
-            break
+            dataBlackjack.betInsured(wager)
         }
     }
     
-    func bet_surrendered(game: GameType, recovered wager: Int) {
+    func betSurrendered(game: GameType, recovered wager: Int) {
         balance += wager
         switch game {
         case .blackjack:
-            data_blackjack.bet_surrendered(recovered: wager)
-            break
+            dataBlackjack.betSurrendered(recovered: wager)
         }
     }
 }
 
 private extension Player {
-    func terminal_ask(_ string: String) async -> String {
+    func terminalAsk(_ string: String) async -> String {
         return await withCheckedContinuation { continuation in
             let response:String = terminal.ask(ConsoleText(stringLiteral: string))
             continuation.resume(returning: response)
@@ -101,23 +101,21 @@ private extension Player {
 }
 
 extension Player {
-    func set_communication_type(_ type: PlayerCommunicationType) {
-        communication_type = type
+    func setCommunicationType(_ type: PlayerCommunicationType) {
+        communicationType = type
         switch type {
-        case .command_line_interface:
+        case .commandLineInterface:
             terminal = Terminal()
-            break
-        case .user_interface:
+        case .userInterface:
             terminal = nil
-            break
         }
     }
     
     func ask(_ string: String) async -> String {
-        switch communication_type {
-        case .command_line_interface:
-            return await terminal_ask(string)
-        case .user_interface:
+        switch communicationType {
+        case .commandLineInterface:
+            return await terminalAsk(string)
+        case .userInterface:
             return "???"
         }
     }

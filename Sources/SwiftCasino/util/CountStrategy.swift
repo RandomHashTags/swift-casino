@@ -5,13 +5,11 @@
 //  Created by Evan Anderson on 1/14/24.
 //
 
-import Foundation
-
 enum CountStrategy : Hashable, CountStrategyProtocol {
     static let allCases: [CountStrategy] = {
         return [
-            CountStrategy.blackjack(.high_low),
-            CountStrategy.blackjack(.omega_ii)
+            CountStrategy.blackjack(.highLow),
+            CountStrategy.blackjack(.omegaII)
         ]
     }()
     
@@ -19,8 +17,8 @@ enum CountStrategy : Hashable, CountStrategyProtocol {
     
     func count(_ cards: [Card], facing: Set<CardFace>) -> Float {
         switch self {
-        case .blackjack(let blackjack_strategy):
-            return blackjack_strategy.count(cards, facing: facing)
+        case .blackjack(let blackjackStrategy):
+            return blackjackStrategy.count(cards, facing: facing)
         }
     }
 }
@@ -31,80 +29,66 @@ protocol CountStrategyProtocol : CaseIterable {
 
 extension CountStrategy {
     enum Blackjack : CountStrategyProtocol {
-        case high_low
-        case omega_ii
-        case wong_halves
+        case highLow
+        case omegaII
+        case wongHalves
         
         func count(_ cards: [Card], facing: Set<CardFace>) -> Float {
             let cards:[Card] = cards.filter({ facing.contains($0.face) })
             switch self {
-            case .high_low:
+            case .highLow:
                 var value:Float = 0
                 for card in cards {
-                    let number_value:Float
+                    let numberValue:Float
                     switch card.number {
                     case .ace, .jack, .queen, .king:
-                        number_value = -1
-                        break
+                        numberValue = -1
                     case .two, .three, .four, .five, .six:
-                        number_value = 1
-                        break
+                        numberValue = 1
                     default:
-                        number_value = 0
-                        break
+                        numberValue = 0
                     }
-                    value += number_value
+                    value += numberValue
                 }
                 return value
-            case .omega_ii:
+            case .omegaII:
                 var value:Float = 0
                 for card in cards {
-                    let number_value:Float
+                    let numberValue:Float
                     switch card.number {
                     case .two, .three, .seven:
-                        number_value = 1
-                        break
+                        numberValue = 1
                     case .four, .five, .six:
-                        number_value = 2
-                        break
+                        numberValue = 2
                     case .nine:
-                        number_value = -1
-                        break
+                        numberValue = -1
                     case .eight, .ace:
-                        number_value = 0
-                        break
+                        numberValue = 0
                     default:
-                        number_value = -2
-                        break
+                        numberValue = -2
                     }
-                    value += number_value
+                    value += numberValue
                 }
                 return value
-            case .wong_halves:
+            case .wongHalves:
                 var value:Float = 0
                 for card in cards {
-                    let number_value:Float
+                    let numberValue:Float
                     switch card.number {
                     case .three, .four, .six:
-                        number_value = 1
-                        break
+                        numberValue = 1
                     case .two, .seven:
-                        number_value = 0.5
-                        break
+                        numberValue = 0.5
                     case .five:
-                        number_value = 1.5
-                        break
+                        numberValue = 1.5
                     case .eight:
-                        number_value = 0
-                        break
+                        numberValue = 0
                     case .nine:
-                        number_value = -0.5
-                        break
+                        numberValue = -0.5
                     default:
-                        number_value = -1
-                        break
+                        numberValue = -1
                     }
-                    value += number_value
+                    value += numberValue
                 }
                 return value
             }

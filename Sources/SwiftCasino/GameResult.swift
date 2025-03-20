@@ -5,8 +5,6 @@
 //  Created by Evan Anderson on 1/15/24.
 //
 
-import Foundation
-
 enum GameResult {
     case blackjack(GameResult.Blackjack)
 }

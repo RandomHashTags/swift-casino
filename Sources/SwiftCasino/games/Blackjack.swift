@@ -5,66 +5,65 @@
 //  Created by Evan Anderson on 1/15/24.
 //
 
-import Foundation
-
 package final class Blackjack : CasinoGame, CardCountable {
-    var minimum_bet : Int { 1 }
-    var maximum_bet : Int { 100 }
+    var minimumBet : Int { 1 }
+    var maximumBet : Int { 100 }
     
-    private(set) var number_of_decks:Int
+    private(set) var numberOfDecks:Int
     private(set) var unplayed:[Card]
     private(set) var discarded:[Card]
     
     let house:BlackjackHand = BlackjackHand(player: nil, type: CardHolderType.house, wagers: [:])
     
     var players:[Player]
-    private(set) var active_hand_index:Int
+    private(set) var activeHandIndex:Int
     var hands:[BlackjackHand]
     
     package init(decks: [Deck], players: [Player]) {
-        number_of_decks = decks.count
+        numberOfDecks = decks.count
         unplayed = decks.flatMap({ $0.cards }).shuffled()
         discarded = []
         
         self.players = players
-        active_hand_index = 0
+        activeHandIndex = 0
         self.hands = []
     }
     
-    var in_play : [Card] {
+    var inPlay : [Card] {
         return hands.flatMap({ $0.cards })
     }
     
-    func running_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
-        return strategy.count(in_play, facing: facing) + strategy.count(discarded, facing: [.down, .up])
+    func runningCount(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return strategy.count(inPlay, facing: facing) + strategy.count(discarded, facing: [.down, .up])
     }
-    func true_count(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
-        return running_count(strategy, facing: facing) / Float(number_of_decks)
+    func trueCount(_ strategy: CountStrategy, facing: Set<CardFace>) -> Float {
+        return runningCount(strategy, facing: facing) / Float(numberOfDecks)
     }
     func count(_ strategy: CountStrategy, type: DeckType) -> Float {
         switch type {
-        case .unplayed: return strategy.count(unplayed, facing: [.up])
-        case .in_play: return strategy.count(in_play, facing: [.up])
+        case .unplayed:  return strategy.count(unplayed, facing: [.up])
+        case .inPlay:    return strategy.count(inPlay, facing: [.up])
         case .discarded: return strategy.count(discarded, facing: [.up])
         }
     }
 }
 extension Blackjack {
-    func draw_for_everyone() {
+    func drawForEveryone() {
         for hand in hands {
             let (card, result):(Card, BlackjackCardDrawResult) = draw(hand: hand)
         }
     }
     
-    var active_hand : BlackjackHand {
-        return hands[active_hand_index]
+    var activeHand : BlackjackHand {
+        return hands[activeHandIndex]
     }
+
     func reset() {
         for hand in hands {
             discard(hand)
         }
         hands.removeAll()
-        house.is_valid = true
+        house.isValid = true
     }
     func discard(_ hand: BlackjackHand) {
         for card in hand.cards {
@@ -72,40 +71,40 @@ extension Blackjack {
         }
         discarded.append(contentsOf: hand.cards)
         hand.cards = []
-        hand.is_valid = false
+        hand.isValid = false
     }
 }
 
 extension Blackjack {
-    func get_next_hand() -> (index: Int, hand: BlackjackHand) {
-        var next_index:Int = active_hand_index + 1
-        let hands_count:Int = hands.count
-        next_index = next_index >= hands_count ? 0 : next_index
-        while next_index != 0 && next_index < hands_count {
-            let hand:BlackjackHand = hands[next_index]
-            if hand.is_valid && hand.allows_more_cards {
+    func getNextHand() -> (index: Int, hand: BlackjackHand) {
+        var nextIndex:Int = activeHandIndex + 1
+        let handsCount:Int = hands.count
+        nextIndex = nextIndex >= handsCount ? 0 : nextIndex
+        while nextIndex != 0 && nextIndex < handsCount {
+            let hand:BlackjackHand = hands[nextIndex]
+            if hand.isValid && hand.allowsMoreCards {
                 break
             }
-            next_index += 1
+            nextIndex += 1
         }
-        return (next_index, hands[next_index])
+        return (nextIndex, hands[nextIndex])
     }
-    func next_hand() {
-        let (index, hand):(Int, BlackjackHand) = get_next_hand()
-        active_hand_index = index
+    func nextHand() {
+        let (index, hand):(Int, BlackjackHand) = getNextHand()
+        activeHandIndex = index
         
-        guard let player:Player = hand.player else { return }
+        guard let player = hand.player else { return }
         Task {
-            await process_player_action(player: player)
+            await processPlayerAction(player: player)
         }
     }
-    func process_player_action(player: Player) async -> BlackjackCardDrawResult? {
+    func processPlayerAction(player: Player) async -> BlackjackCardDrawResult? {
         let action:String = await player.ask("NEXT ACTION??")
-        return perform_action(player: player, action: BlackjackAction.stay, wager: 0)
+        return performAction(player: player, action: BlackjackAction.stay, wager: 0)
     }
     
-    func perform_action(player: Player, action: BlackjackAction, wager: Int) -> BlackjackCardDrawResult? {
-        let hand:BlackjackHand = active_hand
+    func performAction(player: Player, action: BlackjackAction, wager: Int) -> BlackjackCardDrawResult? {
+        let hand:BlackjackHand = activeHand
         
         switch action {
         case .stay:
@@ -117,9 +116,9 @@ extension Blackjack {
             case .blackjack:
                 blackjack(hand)
                 return .blackjack
-            case .twenty_one:
-                twenty_one(hand)
-                return .twenty_one
+            case .twentyOne:
+                twentyOne(hand)
+                return .twentyOne
             case .busted:
                 busted(hand)
                 return .busted
@@ -129,65 +128,62 @@ extension Blackjack {
             
         case .insurance:
             insurance(hand)
-            break
         case .surrender:
             surrender(hand)
-            break
         case .split:
             split(hand)
-            break
-        case .double_down:
-            double_down(player: player, wager: wager, hand: hand)
-            return .doubled_down
+        case .doubleDown:
+            doubleDown(player: player, wager: wager, hand: hand)
+            return .doubledDown
         }
         return nil
     }
     
     func blackjack(_ hand: BlackjackHand) {
-        next_hand()
+        nextHand()
     }
-    func twenty_one(_ hand: BlackjackHand) {
-        next_hand()
+    func twentyOne(_ hand: BlackjackHand) {
+        nextHand()
     }
     func stay(_ hand: BlackjackHand) {
-        next_hand()
+        nextHand()
     }
     func busted(_ hand: BlackjackHand) {
         discard(hand)
-        next_hand()
+        nextHand()
     }
     func insurance(_ hand: BlackjackHand) {
-        guard house.cards.first(where: { $0.number == .ace && $0.face == .up }) != nil, !hand.is_insured else { return }
+        guard house.cards.first(where: { $0.number == .ace && $0.face == .up }) != nil, !hand.isInsured else { return }
         let player:Player = hand.player!
         
-        hand.is_insured = true
-        hand.player!.bet_insured(game: .blackjack, hand.wagers[player]!)
+        hand.isInsured = true
+        hand.player!.betInsured(game: .blackjack, hand.wagers[player]!)
     }
     func surrender(_ hand: BlackjackHand) {
         for (player, wager) in hand.wagers {
-            player.bet_surrendered(game: .blackjack, recovered: wager/2)
+            player.betSurrendered(game: .blackjack, recovered: wager/2)
         }
         discard(hand)
-        next_hand()
+        nextHand()
     }
     func split(_ hand: BlackjackHand) {
-        guard hand.can_split, let player:Player = hand.player, let wager:Int = hand.wagers[player] else { return }
+        guard hand.canSplit, let player:Player = hand.player, let wager:Int = hand.wagers[player] else { return }
         
         let card:Card = hand.cards.removeLast()
         let hand:BlackjackHand = BlackjackHand(player: player, type: hand.type, cards: [card], wagers: hand.wagers)
         
-        player.bet_placed(game: .blackjack, wager)
-        hands.insert(hand, at: active_hand_index)
+        player.betPlaced(game: .blackjack, wager)
+        hands.insert(hand, at: activeHandIndex)
         
         print(hand.name + " split")
         let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hand)
-        let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hands[active_hand_index+1])
+        let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hands[activeHandIndex+1])
     }
-    func double_down(player: Player, wager: Int, hand: BlackjackHand) {
-        guard hand.allows_more_cards else { return }
+    func doubleDown(player: Player, wager: Int, hand: BlackjackHand) {
+        guard hand.allowsMoreCards else { return }
         
         let (_, _):(Card, BlackjackCardDrawResult) = draw(hand: hand)
-        hand.allows_more_cards = false
+        hand.allowsMoreCards = false
         if hand.wagers[player] == nil {
             hand.wagers[player] = wager
         } else {
@@ -196,8 +192,8 @@ extension Blackjack {
     }
 }
 extension Blackjack {
-    func incorporate_discarded() {
-        print("Blackjack;incorporate_discarded;shuffled in the discarded cards")
+    func incorporateDiscarded() {
+        print("Blackjack;incorporateDiscarded;shuffled in the discarded cards")
         unplayed.append(contentsOf: discarded)
         unplayed.shuffle()
         discarded = []
@@ -205,7 +201,7 @@ extension Blackjack {
     
     func draw(hand: BlackjackHand) -> (card: Card, result: BlackjackCardDrawResult) {
         if unplayed.isEmpty {
-            incorporate_discarded()
+            incorporateDiscarded()
         }
         
         let card:Card = unplayed.removeFirst()
@@ -214,22 +210,21 @@ extension Blackjack {
         
         var string:String
         let scores:Set<Int> = hand.scores()
-        let drew_string:String = hand.name + " drew: " + card.number.name + ". Scores: \(scores)."
-        if hand.is_house {
+        let drewString:String = hand.name + " drew: " + card.number.name + ". Scores: \(scores)."
+        if hand.isHouse {
             switch hand.cards.count {
             case 2:
                 card.face = .down
                 string = hand.name + " drew: *UNKNOWN*."
-                break
             case 3:
-                reveal_house()
+                revealHouse()
                 fallthrough
             default:
-                string = drew_string
+                string = drewString
                 break
             }
         } else {
-            string = drew_string
+            string = drewString
         }
         
         let result:BlackjackCardDrawResult
@@ -239,7 +234,7 @@ extension Blackjack {
                 result = .blackjack
             } else {
                 string += " (21!)"
-                result = .twenty_one
+                result = .twentyOne
             }
         } else if scores.min() ?? 21 > 21 {
             string += " (busted!)"
@@ -252,7 +247,7 @@ extension Blackjack {
         return (card, result)
     }
     
-    private func reveal_house() {
+    private func revealHouse() {
         guard house.cards[1].face == .down else { return }
         house.cards[1].face = .up
         print(house.name + " revealed: " + house.cards[1].number.name + ".")
@@ -260,68 +255,68 @@ extension Blackjack {
 }
 
 extension Blackjack {
-    package func round_start(wagers: [Player:[Int]]) {
-        active_hand_index = 0
+    package func roundStart(wagers: [Player:[Int]]) {
+        activeHandIndex = 0
         hands = [house]
         
-        for (player, player_wagers) in wagers {
-            for player_wager in player_wagers {
-                let hand:BlackjackHand = BlackjackHand(player: player, type: CardHolderType.player, wagers: [player : player_wager])
-                player.bet_placed(game: .blackjack, player_wager)
+        for (player, playerWagers) in wagers {
+            for playerWager in playerWagers {
+                let hand:BlackjackHand = BlackjackHand(player: player, type: CardHolderType.player, wagers: [player : playerWager])
+                player.betPlaced(game: .blackjack, playerWager)
                 hands.append(hand)
             }
         }
-        draw_for_everyone()
-        draw_for_everyone()
+        drawForEveryone()
+        drawForEveryone()
         
         if house.scores().contains(21) {
             print("House drew blackjack!")
-            round_end()
+            roundEnd()
         }
     }
 }
 
 extension Blackjack {
-    func round_end() {
-        let hands:[BlackjackHand] = hands.filter({ $0.type != .house && $0.is_valid })
+    func roundEnd() {
+        let hands:[BlackjackHand] = hands.filter({ $0.type != .house && $0.isValid })
         
         let house:BlackjackHand = house
-        if house.is_valid {
+        if house.isValid {
             // check who won, lost, and pushed
-            let max_house_score:Int = house.scores().filter({ $0 <= 21 }).max()!
+            let maxHouseScore:Int = house.scores().filter({ $0 <= 21 }).max()!
             
-            var valid_hand_results:[BlackjackHand:GameResult.Blackjack] = [:]
+            var validHandResults:[BlackjackHand:GameResult.Blackjack] = [:]
             for hand in hands {
                 let score:Int = hand.scores().filter({ $0 <= 21 }).max()!
-                valid_hand_results[hand] = score == max_house_score ? .push : score < max_house_score ? .lost : .won
+                validHandResults[hand] = score == maxHouseScore ? .push : score < maxHouseScore ? .lost : .won
             }
             
-            let winning_hands:[BlackjackHand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .won })
-            for (hand, _) in winning_hands {
-                print("hand " + hand.name + " WON with > score of \(max_house_score)")
+            let winningHands:[BlackjackHand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .won })
+            for (hand, _) in winningHands {
+                print("hand " + hand.name + " WON with > score of \(maxHouseScore)")
                 for (player, wager) in hand.wagers {
-                    player.bet_won(game: .blackjack, wager)
+                    player.betWon(game: .blackjack, wager)
                 }
             }
             
-            let pushed_hands:[BlackjackHand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .push })
-            for (hand, _) in pushed_hands {
-                print("hand " + hand.name + " PUSHED with == score of \(max_house_score)")
+            let pushedHands:[BlackjackHand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .push })
+            for (hand, _) in pushedHands {
+                print("hand " + hand.name + " PUSHED with == score of \(maxHouseScore)")
                 for (player, wager) in hand.wagers {
-                    player.bet_pushed(game: .blackjack, wager)
+                    player.betPushed(game: .blackjack, wager)
                 }
             }
             
-            let losing_hands:[BlackjackHand:GameResult.Blackjack] = valid_hand_results.filter({ $0.value == .lost })
-            for (hand, _) in losing_hands {
-                print("hand " + hand.name + " LOST with < score of \(max_house_score)")
+            let losingHands:[BlackjackHand:GameResult.Blackjack] = validHandResults.filter({ $0.value == .lost })
+            for (hand, _) in losingHands {
+                print("hand " + hand.name + " LOST with < score of \(maxHouseScore)")
             }
         } else {
             // every valid hand won
             for hand in hands {
                 print("hand " + hand.name + " WON due to house busting")
                 for (player, wager) in hand.wagers {
-                    player.bet_won(game: .blackjack, wager)
+                    player.betWon(game: .blackjack, wager)
                 }
             }
         }

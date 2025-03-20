@@ -5,7 +5,11 @@
 //  Created by Evan Anderson on 1/15/24.
 //
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#elseif canImport(Foundation)
 import Foundation
+#endif
 
 package final class BlackjackHand : CardHolder, Hashable {
     
@@ -17,9 +21,9 @@ package final class BlackjackHand : CardHolder, Hashable {
     let player:Player?
     let type:CardHolderType
     var cards:[Card]
-    var is_valid:Bool
-    var allows_more_cards:Bool
-    var is_insured:Bool
+    var isValid:Bool
+    var allowsMoreCards:Bool
+    var isInsured:Bool
     var wagers:[Player:Int]
     
     package init(
@@ -27,18 +31,18 @@ package final class BlackjackHand : CardHolder, Hashable {
         player: Player?,
         type: CardHolderType,
         cards: [Card] = [],
-        is_valid: Bool = true,
-        allows_more_cards: Bool = true,
-        is_insured: Bool = false,
+        isValid: Bool = true,
+        allowsMoreCards: Bool = true,
+        isInsured: Bool = false,
         wagers: [Player:Int]
     ) {
         self.id = id
         self.player = player
         self.type = type
         self.cards = cards
-        self.is_valid = is_valid
-        self.allows_more_cards = allows_more_cards
-        self.is_insured = is_insured
+        self.isValid = isValid
+        self.allowsMoreCards = allowsMoreCards
+        self.isInsured = isInsured
         self.wagers = wagers
     }
     
@@ -47,22 +51,22 @@ package final class BlackjackHand : CardHolder, Hashable {
     }
     
     var name : String {
-        return is_house ? "House" : player!.name + " (hand \(id)"
+        return isHouse ? "House" : player!.name + " (hand \(id)"
     }
-    var is_house : Bool {
+    var isHouse : Bool {
         return type == .house
     }
     
     func scores() -> Set<Int> {
-        let aces:Set<Card> = cards.filter_set({ $0.number == .ace })
+        let aces:Set<Card> = cards.filterSet({ $0.number == .ace })
         if aces.count != 0 {
-            let minimum:Int = cards.filter_set({ !aces.contains($0) }).reduce(0, { $0 + $1.number.score(game: .blackjack) })
-            let aces_count:Int = aces.count
+            let minimum:Int = cards.filterSet({ !aces.contains($0) }).reduce(0, { $0 + $1.number.score(game: .blackjack) })
+            let acesCount:Int = aces.count
             
-            var scores:Set<Int> = [minimum + aces_count]
-            for i in 0..<aces_count {
-                let elevens:Int = aces_count - i
-                scores.insert(minimum + (aces_count - elevens) + (elevens * 11))
+            var scores:Set<Int> = [minimum + acesCount]
+            for i in 0..<acesCount {
+                let elevens:Int = acesCount - i
+                scores.insert(minimum + (acesCount - elevens) + (elevens * 11))
             }
             return scores
         } else {
@@ -72,7 +76,7 @@ package final class BlackjackHand : CardHolder, Hashable {
 }
 
 extension BlackjackHand {
-    var can_split : Bool {
+    var canSplit : Bool {
         let number:Int = cards[0].number.score(game: .blackjack)
         return cards.allSatisfy({ $0.number.score(game: .blackjack) == number })
     }
