@@ -15,8 +15,9 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.91.1"),
-        .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.1")
+        .package(url: "https://github.com/vapor/vapor", from: "4.114.0"),
+        .package(url: "https://github.com/vapor/console-kit", from: "4.15.0"),
+        .package(url: "https://github.com/apple/swift-log", from: "1.6.3")
     ],
     targets: [
         .target(
